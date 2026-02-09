@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h> 
@@ -13,13 +15,12 @@ void enableRawMode (void) {
     atexit(disableRawMode);
 
     struct termios raw = orig_termios;
-    
-    // turns echo and canonical terminal attributes off
-    raw.c_lflag &= ~(ECHO | ICANON);
+   
+    raw.c_iflag &= ~(IXON | ICRNL);
+    raw.c_lflag &= ~(ECHO | ICANON | ISIG | IEXTEN);
 
-    /* The TCSAFLUSH option specifies to set the terminal 
-     * upon no more pending output to be written while also 
-     * discarding any unread input
+    /* The TCSAFLUSH option specifies to set the terminal upon no 
+     * more pending output while also discarding any unread input
      */
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 }
@@ -29,6 +30,12 @@ int main (void) {
     enableRawMode();
 
     char c;
-    while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q');
+    while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q'){
+        if (iscntrl(c)) {
+            printf("%d\n", c);
+        } else {
+            printf("%d ('%c')\n", c, c);
+        }
+    }
     return 0;
 }
